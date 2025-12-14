@@ -1,38 +1,32 @@
+import cv2
+import mediapipe as mp
 import sys
-
-# 1. Robust Import Check
-try:
-    import cv2
-    import mediapipe as mp
-    import numpy as np
-except ImportError as e:
-    print("\n" + "="*40)
-    print("❌ CRITICAL ERROR: Library not found")
-    print(f"Missing: {e.name}")
-    print("Please run: pip install opencv-python mediapipe numpy")
-    print("="*40 + "\n")
-    sys.exit(1)
+import time
 
 def main():
-    print(f"✅ Python Version: {sys.version.split()[0]}")
-    print("✅ Libraries loaded successfully. Attempting to open camera...")
-
-    # Initialize MediaPipe
+    print(f"✅ AI System Loading... (Python {sys.version.split()[0]})")
+    
+    # Initialize Hand Tracking
     mp_hands = mp.solutions.hands
     mp_draw = mp.solutions.drawing_utils
     hands = mp_hands.Hands(
-        max_num_hands=2,
-        min_detection_confidence=0.5,
+        min_detection_confidence=0.5, 
         min_tracking_confidence=0.5
     )
 
     # Open Camera
+    print("📷 Opening Webcam...")
     cap = cv2.VideoCapture(0)
+
     if not cap.isOpened():
-        print("❌ Error: Camera not found. If using Docker, webcam is not supported by default.")
+        print("❌ Error: Could not open webcam.")
+        print("   -> Try changing 'cv2.VideoCapture(0)' to 1 or 2 in main.py")
+        input("Press Enter to exit...")
         return
 
-    print("🎥 Camera Active! Press 'q' to exit.")
+    print("✨ System Ready! Press 'q' to stop.")
+
+    p_time = 0
 
     while True:
         success, img = cap.read()
@@ -47,14 +41,17 @@ def main():
         if results.multi_hand_landmarks:
             for hand_lms in results.multi_hand_landmarks:
                 mp_draw.draw_landmarks(img, hand_lms, mp_hands.HAND_CONNECTIONS)
-                
-                # Get Index Finger Tip (ID 8)
-                h, w, c = img.shape
-                cx, cy = int(hand_lms.landmark[8].x * w), int(hand_lms.landmark[8].y * h)
-                cv2.circle(img, (cx, cy), 15, (255, 0, 255), cv2.FILLED)
 
+        # Calculate FPS
+        c_time = time.time()
+        fps = 1 / (c_time - p_time) if (c_time - p_time) > 0 else 0
+        p_time = c_time
+        
+        # Display Text
+        cv2.putText(img, f'FPS: {int(fps)}', (10, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
         cv2.imshow("Sign Language AI", img)
 
+        # Exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 

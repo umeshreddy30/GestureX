@@ -1,47 +1,44 @@
 @echo off
-TITLE Sign Language AI - Installer & Launcher
+TITLE Sign Language AI - Auto Launcher
 CLS
 
 ECHO ======================================================
-ECHO   SIGN LANGUAGE AI - AUTO SETUP
+ECHO      SIGN LANGUAGE AI - ONE CLICK INSTALLER
 ECHO ======================================================
 
-:: 1. SEARCH FOR PYTHON 3.10
-:: We look for the standard install path or the global command
-SET PYTHON_CMD=py -3.10
-%PYTHON_CMD% --version >nul 2>&1
+:: 1. Check for Python 3.10 specifically (Required for MediaPipe)
+py -3.10 --version >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
-    SET PYTHON_CMD=python
-)
-
-:: Check if the found command is actually version 3.10
-%PYTHON_CMD% -c "import sys; exit(0) if sys.version_info[:2] == (3, 10) else exit(1)" >nul 2>&1
-IF %ERRORLEVEL% NEQ 0 (
-    ECHO ❌ ERROR: Python 3.10 is not detected.
-    ECHO MediaPipe REQUIRES Python 3.10.
+    ECHO ❌ ERROR: Python 3.10 is missing!
     ECHO.
-    ECHO Please download it here: https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe
-    ECHO (Make sure to check 'Add to PATH' during installation)
+    ECHO MediaPipe requires Python 3.10. Please install it:
+    ECHO 1. Go to: https://www.python.org/downloads/release/python-31011/
+    ECHO 2. Download "Windows installer (64-bit)"
+    ECHO 3. IMPORTANT: Check "Add Python to PATH" during install.
+    ECHO.
     PAUSE
     EXIT /B
 )
 
-ECHO ✅ Found Compatible Python: %PYTHON_CMD%
-
-:: 2. CREATE VIRTUAL ENVIRONMENT
+:: 2. Create Virtual Environment (If missing)
 IF NOT EXIST "venv" (
-    ECHO 📦 Creating virtual environment...
-    %PYTHON_CMD% -m venv venv
+    ECHO 📦 Creating a fresh virtual environment...
+    py -3.10 -m venv venv
 )
 
-:: 3. INSTALL LIBRARIES
-ECHO ⬇️  Checking libraries...
-call venv\Scripts\activate
-pip install --upgrade pip >nul 2>&1
-pip install opencv-python mediapipe numpy >nul 2>&1
+:: 3. Install Libraries (Directly into venv)
+ECHO ⬇️  Checking/Installing libraries...
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 
-:: 4. RUN PROJECT
-ECHO 🚀 Launching Camera...
-python main.py
+:: 4. Run the Project
+ECHO.
+ECHO 🚀 STARTING AI...
+ECHO.
+.\venv\Scripts\python.exe main.py
 
-PAUSE
+:: 5. Pause only if it crashes
+IF %ERRORLEVEL% NEQ 0 (
+    ECHO.
+    ECHO ❌ The app crashed or closed. Read the error above.
+    PAUSE
+)
